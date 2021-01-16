@@ -9,24 +9,18 @@ import math
 import os
 import re
 import shutil
-import sys
 import time
-from asyncio import create_subprocess_shell as asyncsubshell
-from asyncio import subprocess as asyncsub
-from os import remove
-from time import gmtime, strftime
-from traceback import format_exc
 from typing import List
 
+import aiohttp
 from sample_config import Config
 from telethon import events
-from telethon.errors import MessageTooLongError
 from telethon.tl.functions.channels import GetParticipantRequest
 from telethon.tl.functions.messages import GetPeerDialogsRequest
 from telethon.tl.tlobject import TLObject
 from telethon.tl.types import (ChannelParticipantAdmin,
                                ChannelParticipantCreator,
-                               DocumentAttributeFilename, MessageEntityPre)
+                               MessageEntityPre)
 from telethon.utils import add_surrogate
 
 from userbot import bot
@@ -386,3 +380,23 @@ def remove_plugin(shortname):
                     del bot._event_builders[i]
     except:
         raise ValueError
+
+
+class AioHttp:
+    @staticmethod
+    async def get_json(link):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(link) as resp:
+                return await resp.json()
+
+    @staticmethod
+    async def get_text(link):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(link) as resp:
+                return await resp.text()
+
+    @staticmethod
+    async def get_raw(link):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(link) as resp:
+                return await resp.read()

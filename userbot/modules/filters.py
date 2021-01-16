@@ -13,12 +13,9 @@ import logging
 import re
 
 from sample_config import Config
-from telethon import events
-from telethon.tl import types
 from userbot import bot
 from userbot.database.filtersdb import (add_filter, delete_all_filters,
-                                        delete_filter, get_all_filters,
-                                        get_filter)
+                                        delete_filter, get_all_filters)
 from userbot.util import admin_cmd
 
 logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s',
@@ -31,7 +28,7 @@ last_triggered_filters = {}
 
 @bot.on(admin_cmd(incoming=True))
 async def on_snip(event):
-    name = event.raw_text
+    name = event.text
     if (
         event.chat_id in last_triggered_filters
         and name in last_triggered_filters[event.chat_id]
@@ -39,16 +36,12 @@ async def on_snip(event):
         # avoid userbot spam
         # "I demand rights for us bots, we are equal to you humans." -Henri Koivuneva (t.me/UserbotTesting/2698)
         return False
-
     snips = await get_all_filters(event.chat_id)
-
     if snips:
         for snip in snips:
             pattern = r"( |^|[^\w])" + \
                 re.escape(snip['keyword']) + r"( |$|[^\w])"
-            if f".savefilter {snip['keyword']}" in event.raw_text:
-                return
-            if re.search(pattern, name, flags=re.IGNORECASE):
+            if re.fullmatch(pattern, name, flags=re.IGNORECASE):
                 msg_o = await event.client.get_messages(
                     entity=Config.PRIVATE_CHANNEL_BOT_API_ID,
                     ids=int(snip['msg'])
@@ -56,20 +49,12 @@ async def on_snip(event):
                 message_id = event.message.id
                 if event.reply_to_msg_id:
                     message_id = event.reply_to_msg_id
-                if msg_o.document:
-                    await event.client.send_message(
-                        event.chat_id,
-                        msg_o.message,
-                        reply_to=message_id,
-                        file=msg_o.media
-                    )
-                else:
-                    await event.client.send_message(
-                        event.chat_id,
-                        msg_o.message,
-                        reply_to=message_id,
-                        link_preview=False
-                    )
+                await event.client.send_message(
+                    event.chat_id,
+                    msg_o.message,
+                    reply_to=message_id,
+                    file=msg_o.media
+                )
                 if event.chat_id not in last_triggered_filters:
                     last_triggered_filters[event.chat_id] = []
                 last_triggered_filters[event.chat_id].append(name)
@@ -94,7 +79,7 @@ async def on_snip_save(event):
         await event.edit("Reply to a message with `savefilter keyword` to save the filter")
 
 
-@bot.on(admin_cmd(pattern="listfilters"))
+@ bot.on(admin_cmd(pattern="listfilters"))
 async def on_snip_list(event):
     all_snips = await get_all_filters(event.chat_id)
     OUT_STR = "Available Filters in the Current Chat:\n"
@@ -119,14 +104,14 @@ async def on_snip_list(event):
         await event.edit(OUT_STR)
 
 
-@bot.on(admin_cmd(pattern="clearfilter (.*)"))
+@ bot.on(admin_cmd(pattern="clearfilter (.*)"))
 async def on_snip_delete(event):
     name = event.pattern_match.group(1)
     await delete_filter(event.chat_id, name)
     await event.edit(f"Delete filter **{name}** deleted successfully")
 
 
-@bot.on(admin_cmd(pattern="clearallfilters"))
+@ bot.on(admin_cmd(pattern="clearallfilters"))
 async def on_all_snip_delete(event):
     await delete_all_filters(event.chat_id)
     await event.edit("All filters **in current chat** deleted successfully")
